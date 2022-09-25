@@ -1,0 +1,85 @@
+<head>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="./js/jquery-3.6.0.min.js"></script>
+
+    <title>Space Photography</title>
+</head>
+<body>
+    <div class="navbar-fixed">
+        <nav>
+            <div class="nav-wrapper">
+            <a href="index.html" class="brand-logo">Space Photography</a>
+            <ul class="right hide-on-med-and-down">
+                <li><a href="price.html">$$$</a></li>
+                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="README-MATERIALIZE.md">Materialize Info</a></li>
+            </ul>
+            </div>
+        </nav>
+    </div>
+    <div class="container">
+        <div class="parallax-container">
+            <div class="parallax"><img src="images/asp.jpg" alt="Image to buy"></div>
+        </div>
+        <h4>Purchasing details:</h4>
+        <div class="row">
+            <form class="col s12">
+                <div class="row">
+                    <div class="col s8">
+                    <input type="text" id="ccnumber" placeholder="0123 4367 8901 2345">
+                    <label for="ccnumber">Credit/Debit Card number</label>
+                    </div>
+                    <div class="col s4">
+                    <input type="text" class="datepicker" id="expiry-date" placeholder="01/22">
+                    <label for="expiry-date">Exp. Date</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col s6">
+                        <input type="text" id="firstname">
+                        <label for="firstname">Firstname</label>
+                    </div>
+                    <div class="col s6">
+                        <input type="text" id="lastname">
+                        <label for="lastname">Surname</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <h4>What you get</h4>
+    </div>
+    <footer class="page-footer">
+        <div class="container">
+            <div class="row">
+            <div class="col l6 s12">
+                <h5 class="white-text">Information about Image Generation</h5>
+                <p class="grey-text text-lighten-4">These images were generated using Space Engine and Elite Dangerous</p>
+            </div>
+            <div class="col l4 offset-l2 s12">
+                <h5 class="white-text">Links</h5>
+                <ul>
+                    <li><a class="grey-text text-lighten-3" href="https://spaceengine.org/" target="_blank">Space Engine</a></li>
+                    <li><a class="grey-text text-lighten-3" href="https://www.elitedangerous.com/" target="_blank">Elite Dangerous</a></li>
+                    <li><a class="grey-text text-lighten-3" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Tutorial Video</a></li>
+                </ul>
+            </div>
+            </div>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+            © 3008 Copyright Text
+            <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
+            </div>
+        </div>
+    </footer>
+    <!--JavaScript at end of body for optimized loading-->
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <script type="text/javascript" src="js/script.js"></script>
+</body>

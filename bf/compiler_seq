@@ -1,0 +1,5 @@
+#!/usr/bin/env
+
+./compiler $1 temp.asm
+nasm -f elf64 -o temp.o temp.asm
+ld -o $2 temp.o

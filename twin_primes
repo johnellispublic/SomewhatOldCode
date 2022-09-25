@@ -1,0 +1,21 @@
+#!/bin/python3
+
+import numpy as np
+
+n = 1000
+
+twin_primes = []
+prev_prime = 2
+
+for i in range(3,n):
+    prime = True
+    for f in range(2,int(i**0.5)+1):
+        if i%f == 0:
+            prime = False
+            break
+    if prime:
+        if i - prev_prime == 2:
+            twin_primes.append(i - 1)
+        prev_prime = i
+
+print(twin_primes)

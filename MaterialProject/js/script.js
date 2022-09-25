@@ -1,0 +1,9 @@
+$(document).ready(
+    function(){
+        $('.materialboxed').materialbox();
+        $('.parallax').parallax();
+        $('.fixed-action-btn').floatingActionButton();
+        $('.dropdown-trigger').dropdown();
+        $('.datepicker').datepicker({format:'mm/yy'});
+    }
+);

@@ -1,0 +1,266 @@
+#!/bin/python3
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import animation
+import matplotlib as mpl
+import matplotlib.colors as colors
+import time
+
+CHUNK_SIZE = 16
+
+alive_tiles = []
+updating_tiles = []
+
+def same_quadrant(x0,y0,x1,y1):
+    same_x = False
+    same_y = False
+
+    if x0 >= 0 and x1 >= 0:
+        same_x = True
+    elif x0 < 0 and x1 < 0:
+        same_x = True
+
+    if y0 >= 0 and y1 >= 0:
+        same_y = True
+    elif y0 < 0 and y1 < 0:
+        same_y = True
+
+    return same_x and same_y
+
+def splice(str1,str2):
+    s1 = str(str1).split('\n')
+    s2 = str(str2).split('\n')
+    out = ""
+    for i in range(max(len(s1),len(s2))):
+
+        if i > len(s1):
+            out += " "*len(s1[-1]) + s2[i] + "\n"
+        elif i > len(s2):
+            out += s1[i] + "\n"
+        else:
+            out += s1[i] + s2[i] + "\n"
+
+    return out[:-1]
+
+class Tile:
+    def __init__(self,x,y,parent, alive_tiles):
+        self.x = x
+        self.y = y
+        self.alive = False
+        self.updating = False
+        self.checked = False
+        self.parent = parent
+        self.alive_tiles = alive_tiles
+        self.cardinals = []
+
+
+
+    def add_cardinals(self):
+        N = self.parent.get_tile(self.x, self.y+1)
+        S = self.parent.get_tile(self.x, self.y-1)
+        E = self.parent.get_tile(self.x+1, self.y)
+        W = self.parent.get_tile(self.x-1, self.y)
+        NW = self.parent.get_tile(self.x-1, self.y+1)
+        SW = self.parent.get_tile(self.x-1, self.y-1)
+        NE = self.parent.get_tile(self.x+1, self.y+1)
+        SE = self.parent.get_tile(self.x+1, self.y-1)
+
+        self.cardinals = [N,S,E,W,NW,SW,NE,SE]
+
+    def update(self,updating_tiles):
+
+        if not self.cardinals:
+            self.add_cardinals()
+
+        alive_count = 0
+        for cardinal in self.cardinals:
+            if cardinal.alive:
+                alive_count += 1
+
+        if (alive_count >= 4 or alive_count < 2) and self.alive:
+            self.updating = True
+            updating_tiles.append(self)
+        elif alive_count == 3 and not self.alive:
+            self.updating = True
+            updating_tiles.append(self)
+
+        self.checked = True
+
+    #    print(self, alive_count, self.updating)
+
+    def update_neighbours(self,updating_tiles):
+        for cardinal in self.cardinals:
+            if not cardinal.checked:
+                cardinal.update(updating_tiles)
+
+    def finalise(self):
+        if self.updating:
+            self.alive = not self.alive
+
+        self.updating = False
+
+        if not self.alive and self in self.alive_tiles:
+            self.alive_tiles.remove(self)
+
+        elif self.alive and self not in self.alive_tiles:
+            self.alive_tiles.append(self)
+
+    def set(self,value):
+        if self.alive == bool(value):
+            return
+        elif self.alive:
+            self.alive = False
+            alive_tiles.remove(self)
+        else:
+            self.alive = True
+            alive_tiles.append(self)
+
+    def __bool__(self):
+        return self.alive
+
+    def __repr__(self):
+        if self.alive:
+            return f"({self.x}, {self.y})"
+        else:
+            return f"({self.x}, {self.y}) (dead)"
+
+def set_tiles(tiles,chunks):
+    for tilex in range(len(tiles)):
+        for tiley in range(len(tiles[tilex])):
+            if tiles[tilex][tiley]:
+                chunks[0][0].get_tile(tilex,tiley).set(True)
+
+class Chunk:
+    def __init__(self,x,y,lvl,alive_tiles,parent=None):
+        self.x0 = x
+        self.y0 = y
+        self.x1 = x + CHUNK_SIZE**lvl
+        self.y1 = y + CHUNK_SIZE**lvl
+        self.lvl = lvl
+        self.alive_tiles = alive_tiles
+
+        self.sub_chunk = np.zeros((CHUNK_SIZE,CHUNK_SIZE),dtype=object)
+
+
+        if lvl == 1:
+            for sub_x in range(CHUNK_SIZE):
+                for sub_y in range(CHUNK_SIZE):
+                    self.sub_chunk[sub_x, sub_y] = Tile(x + sub_x, y + sub_y, self, self.alive_tiles)
+
+        self.parent = parent
+
+    def __bool__(self):
+        return True
+
+    def get_tile(self,x,y):
+        if self.x0 <= x < self.x1 and self.y0 <= y < self.y1:
+            tile = self.sub_chunk[((x - self.x0) % CHUNK_SIZE**(self.lvl))//(CHUNK_SIZE**(self.lvl-1)), (y - self.y0) % CHUNK_SIZE**(self.lvl)//(CHUNK_SIZE**(self.lvl-1))]
+            if self.lvl == 1:
+                return tile
+            elif tile:
+                return tile.get_tile(x,y)
+            else:
+                return self.add_child(x,y).get_tile(x,y)
+
+        else:
+            if same_quadrant(x,y,self.x0,self.y0):
+                if self.parent:
+                    return self.parent.get_tile(x,y)
+                else:
+                    self.add_parent()
+                    return self.parent.get_tile(x,y)
+            else:
+                if x < 0:
+                    if y < 0:
+                        return chunk_bl.get_tile(x,y)
+                    else:
+                        return chunk_tl.get_tile(x,y)
+                else:
+                    if y < 0:
+                        return chunk_br.get_tile(x,y)
+                    else:
+                        return chunk_tr.get_tile(x,y)
+
+    def add_child(self,x,y):
+        lvl = self.lvl - 1
+        x0 = x // CHUNK_SIZE**lvl * CHUNK_SIZE**lvl
+        y0 = y // CHUNK_SIZE**lvl * CHUNK_SIZE**lvl
+        self.sub_chunk[x0 // CHUNK_SIZE**(self.lvl-1), y0 // CHUNK_SIZE**(self.lvl-1)] = Chunk(x0, y0, lvl, self.alive_tiles, parent=self)
+        return self.sub_chunk[x0 // CHUNK_SIZE**(self.lvl-1), y0 // CHUNK_SIZE**(self.lvl-1)]
+
+
+    def add_known_child(self,child):
+        lvl = child.lvl
+        x = child.x0 // CHUNK_SIZE**lvl
+        y = child.y0 // CHUNK_SIZE**lvl
+        self.sub_chunk[x,y] = child
+
+    def add_parent(self):
+        lvl = self.lvl + 1
+        x = self.x0 // CHUNK_SIZE**lvl * CHUNK_SIZE**lvl
+        y = self.y0 // CHUNK_SIZE**lvl * CHUNK_SIZE**lvl
+        self.parent = Chunk(x, y, lvl, self.alive_tiles)
+        self.parent.add_known_child(self)
+
+    def __repr__(self):
+        out = ""#+"-"*CHUNK_SIZE + "\n"
+        if self.lvl == 1:
+            for y in range(CHUNK_SIZE-1,-1,-1):
+                if y != CHUNK_SIZE-1:
+                    out += f"\n"
+                for x in range(CHUNK_SIZE):
+                    if self.sub_chunk[x, y]:
+                        out += '█'
+                    else:
+                        out += ' '
+            return out #+ " "+"-"*CHUNK_SIZE
+        else:
+            return f"({self.x0},{self.y0}) {self.lvl}"
+chunk_tr = Chunk(0,0,1, alive_tiles)
+chunk_br = Chunk(0,-CHUNK_SIZE,1,alive_tiles)
+chunk_tl = Chunk(-CHUNK_SIZE,0,1,alive_tiles)
+chunk_bl = Chunk(-CHUNK_SIZE,-CHUNK_SIZE,1,alive_tiles)
+
+chunks = [[chunk_tr, chunk_br],[chunk_tl, chunk_bl]]
+
+tiles = [
+[0, 1, 0],
+[1, 1, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[1, 0, 0],
+[1, 0, 1],
+[1, 0, 0],]
+
+
+
+set_tiles(tiles, chunks)
+#print(alive_tiles)
+
+def tick(max_ticks):
+    updated_tiles = []
+    for i in range(max_ticks):
+        updating_tiles = []
+        for tile in updated_tiles:
+            tile.update_neighbours(updating_tiles)
+
+        for tile in alive_tiles:
+            tile.update(updating_tiles)
+
+        for tile in updating_tiles:
+            tile.finalise()
+        updated_tiles = updating_tiles[:]
+        print(updating_tiles)
+        yield
+print(splice(chunk_tl,chunk_tr))
+print(splice(chunk_bl,chunk_br))
+print('-'*(CHUNK_SIZE*2+4))
+
+for i in tick(3):
+    print(splice(chunk_tl,chunk_tr))
+    print(splice(chunk_bl,chunk_br))
+    print('-'*(CHUNK_SIZE*2+4))
+    #print(alive_tiles)
+    time.sleep(1/2)

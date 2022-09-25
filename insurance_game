@@ -1,0 +1,137 @@
+#!/bin/python3
+
+import random
+import os
+
+DROUGHT_CHANCE = 0.5
+SEASON_NUM = 6
+SCHOOL_COST = 0
+
+CHEAP_LOAN = 0
+EXPENSIVE_LOAN = 20
+
+CHEAP_MAKE_NORMAL = 50
+CHEAP_MAKE_BAD = 0
+
+EXPENSIVE_MAKE_NORMAL = 150
+EXPENSIVE_MAKE_BAD = 0
+
+LOAN_UNPAID_COST = 50
+
+MAXIMUM_DEBT = 70
+DEBT_EXCEDED_SEED_INCOME_PENALTY = 0.5
+
+INSURANCE_COST = 20
+INSURANCE_PAYOUT_NORMAL = 0
+INSURANCE_PAYOUT_BAD = 60
+
+
+
+
+
+def run_season(with_insurance, debt, school_tokens,income_multiplier):
+
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+    SEED_INFO = f"""
+Traditional seeds:          High Quality Seeds:
+  Normal Season: Make {str(CHEAP_MAKE_NORMAL*income_multiplier).ljust(2,' ')}\t  Normal Season: Make {str(EXPENSIVE_MAKE_NORMAL*income_multiplier).ljust(2,' ')}
+  Bad Season:    Make {str(CHEAP_MAKE_BAD*income_multiplier).ljust(2,' ')}\t  Bad Season:    Make {str(EXPENSIVE_MAKE_BAD*income_multiplier).ljust(2,' ')}
+
+  Loan cost: {CHEAP_LOAN}\t\t\t  Loan cost: {EXPENSIVE_LOAN}
+    """
+
+    print(f"Debt: {str(debt).ljust(3,' ')} School Tokens: {school_tokens}")
+    print(SEED_INFO)
+    using_expensive = input('Do you want to pay for the High Quality Seeds? (y/n): ').lower()
+
+    if using_expensive == 'y' or using_expensive == 'yes':
+        using_expensive = True
+        loan = EXPENSIVE_LOAN
+    else:
+        using_expensive = False
+        loan = CHEAP_LOAN
+
+    if with_insurance == False:
+        insured = False
+    else:
+        print(f"""
+Drought Index Insurance:
+  Insurance Cost: {INSURANCE_COST}
+  If Normal Season: {INSURANCE_PAYOUT_NORMAL}
+  If Bad Season: {INSURANCE_PAYOUT_BAD}
+        """)
+        insured = input("Do you want to purchace insurance? (y/n): ").lower()
+        if insured == 'y' or insured == 'yes':
+            insured = True
+            loan += INSURANCE_COST
+        else:
+            insured = False
+
+        print()
+
+
+    wetness = random.random()
+    if wetness < DROUGHT_CHANCE:
+        drought = True
+        if insured:
+            print(f"There has been a drought! As you are insured, you get a payout of {INSURANCE_PAYOUT_BAD}")
+            amount_made = INSURANCE_PAYOUT_BAD
+        else:
+            print("There has been a drought! No money is made this season.")
+            amount_made = 0
+    else:
+        drought = False
+        if using_expensive:
+            print(f"It was a normal season. You made {EXPENSIVE_MAKE_NORMAL*income_multiplier}")
+            amount_made = EXPENSIVE_MAKE_NORMAL*income_multiplier
+        else:
+            print(f"It was a normal season. You made {CHEAP_MAKE_NORMAL*income_multiplier}")
+            amount_made = CHEAP_MAKE_NORMAL*income_multiplier
+
+    print()
+
+    if amount_made < loan:
+        print(f"You were unable to pay back your loan. This has caused your debt to increase by {LOAN_UNPAID_COST} from {debt} to {debt + LOAN_UNPAID_COST}")
+        debt += LOAN_UNPAID_COST
+    elif loan > 0:
+        print(f"You were able to pay back your loan of {loan}, causing you to have made a net income of {amount_made - loan}")
+
+    print()
+
+    if debt > MAXIMUM_DEBT:
+        print(f"You have exceded the maximum debt of {MAXIMUM_DEBT}, causing it to reset to 0 and your income from your seeds to be divided by {1/DEBT_EXCEDED_SEED_INCOME_PENALTY}")
+        debt = 0
+        income_multiplier *= DEBT_EXCEDED_SEED_INCOME_PENALTY
+
+    if amount_made > SCHOOL_COST:
+        print(f"As you have made over {SCHOOL_COST}, you can pay your school fees")
+        school_tokens += 1
+        amount_made -= SCHOOL_COST
+
+    if debt > 0 and amount_made > 0:
+        print()
+        print("You spend all the rest of your income, so you cannot repay your debts.")
+
+    print()
+
+    input("Press [Enter] to contine: ")
+
+    return debt, school_tokens, income_multiplier
+
+while True:
+    os.system('cls' if os.name == 'nt' else 'clear')
+    debt = 0
+    school_tokens = 0
+    income_multiplier = 1
+    with_insurance = input("Do you want to play with insurance? (y/n, q to quit): ").lower()
+
+    if with_insurance == 'q' or with_insurance == 'quit':
+        break
+    elif with_insurance == 'y' or with_insurance == 'yes':
+        with_insurance = True
+    else:
+        with_insurance = False
+
+    for _ in range(SEASON_NUM):
+        debt, school_tokens, income_multiplier = run_season(with_insurance, debt, school_tokens, income_multiplier)
